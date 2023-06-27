@@ -23,8 +23,8 @@ darfile <- "Ts65Dn_DARs.xlsx"
 idents <- getSheetNames(darfile)
 list.dar <- lapply(idents, function(x) {
   df <- read.xlsx(darfile, sheet = x, rowNames = T) %>%
-    rownames_to_column(var = "coord") %>%
-    dplyr::mutate(comparison = x)
+                  rownames_to_column(var = "coord") %>%
+                  dplyr::mutate(comparison = x)
 })
 
 # Calculate regions with increased and decreased accessibility, and all accessible regions in Ts65Dn.
