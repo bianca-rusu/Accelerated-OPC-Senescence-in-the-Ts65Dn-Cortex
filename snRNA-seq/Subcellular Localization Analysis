@@ -14,7 +14,7 @@ OPCs_prediction_sig$sig <- NULL
 OPCs_prediction_counts <- OPCs_prediction_sig %>%
   count(location)
 
-# FIG 3D: barplot of OPC subcellular localization.
+# FIG 4D: barplot of OPC subcellular localization.
 ggplot(data = OPC_Subcellular_Localization, aes(x = Location)) +
        geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
                 aes(x = Location, y = Value, color = Direction, fill = Direction)) +
@@ -26,7 +26,7 @@ ggplot(data = OPC_Subcellular_Localization, aes(x = Location)) +
              panel.background = element_blank(), axis.line = element_line(color = "black")) +
        geom_hline(aes(yintercept=0), color="black", linetype="solid", size=0.5)
 
-# FIG 3E: heatmap of OPC subcellular localization.
+# FIG 4E: heatmap of OPC subcellular localization.
 ggplot(OPC_Subcellular_LogChange, aes(celltype, gene, fill= avg_log2FC)) + 
        geom_tile()+
        scale_fill_distiller(palette = "PRGn") +
