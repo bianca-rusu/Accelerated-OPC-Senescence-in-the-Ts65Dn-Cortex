@@ -1,0 +1,43 @@
+# Load the object and required packages.
+library(Seurat)
+ATAC <- readRDS("Ts65Dn_OPC_Senescence_ATAC_Object.rds")
+DefaultAssay(ATAC) <- "peaks"
+
+# Find TF motifs.
+tf_celltype.df <- FindAllMarkers(sub_atac, only.pos = T, assay = "chromvar")
+unique_tf.list <- unique(tf_celltype.df$gene)
+aver_chromvar <- AverageExpression(sub_atac, assays = "chromvar", features = unique_tf.list) %>%
+  as.data.frame()
+aver_chromvar <- aver_chromvar[do.call(order, c(aver_chromvar, list(decreasing=TRUE))),]
+aver_chromvar$max <- max.col(aver_chromvar)
+aver_chromvar <- aver_chromvar[order(aver_chromvar$max), ]
+aver_chromvar <- dplyr::select(aver_chromvar, -max)
+colnames(aver_chromvar) <- levels(Idents(sub_atac))
+
+# FIG 5E: heatmap of all cell types TF motif accessibility.
+pheatmap::pheatmap(aver_chromvar,scale = "row", cluster_cols=FALSE,cluster_rows = FALSE,
+                   show_rownames=FALSE, color=rev(col.pal))
+
+# FIG 7B: position weight matrix (PWM) plots.
+MotifPlot(object = ATAC, motifs = "MA0162.4") #Egr1
+MotifPlot(object = ATAC, motifs = "MA0774.1") #Meis2
+MotifPlot(object = ATAC, motifs = "MA0657.1") #Klf13
+MotifPlot(object = ATAC, motifs = "MA0105.4") #Nfkb1
+MotifPlot(object = ATAC, motifs = "MA0778.1") #Nfkb2
+MotifPlot(object = ATAC, motifs = "MA0506.1") #Nrf1
+MotifPlot(object = ATAC, motifs = "MA1099.2") #Hes1
+
+# FIG 7B: barplot for all cell types select TF motif enrichment.
+ggplot(data = TF_Motif_Enrichment, aes(x = Motif)) +
+       geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(x = Motif, y = FoldChange, color = Celltype, fill = Celltype)) +
+       scale_color_manual(values = c("indianred2","darkorange1", "#cdaf0a","springgreen3",
+                                     "lightseagreen", "lightskyblue","darkseagreen",
+                                     "royalblue1","purple2")) +
+       scale_fill_manual(values = c("indianred2","darkorange1", "#cdaf0a","springgreen3",
+                                    "lightseagreen", "lightskyblue","royalblue1","darkseagreen",
+                                    "royalblue1","purple2")) +  
+       scale_y_continuous(name = "Fold Change", expand = c(0,0),limits = c(0,4.75),
+                          breaks = seq(0,4.75, by=1.5), position = "right")+
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black"))
