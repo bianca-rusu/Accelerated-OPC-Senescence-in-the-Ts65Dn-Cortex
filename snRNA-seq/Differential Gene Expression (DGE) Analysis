@@ -86,7 +86,7 @@ upset(fromList(cells), nsets = 10, keep.order = TRUE,
       main.bar.color = c("springgreen3","#cdaf0a","lightseagreen","indianred2","royalblue1","lightskyblue",
                          "darkorange1","magenta3","purple2","orchid2",greys))
 
-# FIG 3C: volcano plot of OPC DEGs.
+# FIG 4C: volcano plot of OPC DEGs.
 with(OPC_DGE, plot(avg_log2FC, -log10(FDR), pch=16, cex = 0.5, col = "grey50", main="DEGs in OPCs",
                    xlim = c(-0.5,0.5), ylim = c(0.2,10), log = "y", abline(h=1.3,v=c(-0.1,0.1),lty=2,lwd=1.5)))
 with(subset(OPC_DGE, FDR<.05 & avg_log2FC > 0), points(avg_log2FC, -log10(FDR), pch=16, cex = 0.55, col="#9970ab"))
