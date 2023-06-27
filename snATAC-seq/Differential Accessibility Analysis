@@ -9,17 +9,33 @@ DefaultAssay(atacAggr) <- 'peaks'
 
 # Perform differential accessibility analysis (same analysis to be performed on Inhibitory and Excitatory neurons).
 GetMarkers <- function(cluster, seurat_aggregate) {
-  print(paste0("Finding DAR for: ",cluster,"-DS VS CTL"))
-  cluster1 <- paste0('DS_',cluster)
-  cluster2 <- paste0('Control_',cluster)
-  atacAggr <- seurat_aggregate
-  dar <- FindMarkers(atacAggr, ident.1 = cluster1, ident.2 = cluster2, test.use = 'LR', latent.vars = "nCount_peaks",
-                     logfc.threshold=0.1)
-  cf <- ClosestFeature(atacAggr,rownames(dar))
-  dar$FDR<-p.adjust(dar$p_val, method="BH")
-  dar$sig<-dar$FDR<0.05
-  return(cbind(dar, gene=cf$gene_name, distance=cf$distance))
+                       print(paste0("Finding DAR for: ",cluster,"-DS VS CTL"))
+                       cluster1 <- paste0('DS_',cluster)
+                       cluster2 <- paste0('Control_',cluster)
+                       atacAggr <- seurat_aggregate
+                       dar <- FindMarkers(atacAggr, ident.1 = cluster1, ident.2 = cluster2, test.use = 'LR', latent.vars = "nCount_peaks",
+                                          logfc.threshold=0.1)
+                       cf <- ClosestFeature(atacAggr,rownames(dar))
+                       dar$FDR<-p.adjust(dar$p_val, method="BH")
+                       dar$sig<-dar$FDR<0.05
+                       return(cbind(dar, gene=cf$gene_name, distance=cf$distance))
 }
 idents <- levels(atacAggr@meta.data$celltype)
 list.cluster.dar <- lapply(idents, function(x) {GetMarkers(x, seurat_aggregate = atacAggr)})
 dir.create(here("DAR_DS_VS_CTL"), showWarnings = FALSE)
+
+# FIG 5C: volcano plot for OPCs from snATAC-seq data.
+with(OPC_DAR, plot(avg_log2FC, -log10(FDR), pch=16, cex = 0.5, col = "grey50", main="DARs in OPCs",
+                   xlim = c(-0.95,0.95), ylim = c(0.2,10), log = "y", abline(h=1.3,v=c(-0.1,0.1),lty=2,lwd=1.5)))
+with(subset(OPC_DAR, FDR<0.05 & avg_log2FC > 0), points(avg_log2FC, -log10(FDR), pch=16, cex = 0.55, col="#9970ab"))
+with(subset(OPC_DAR, FDR<0.05 & avg_log2FC < 0), points(avg_log2FC, -log10(FDR), pch=16, cex = 0.55, col="#5aae61"))
+peakup <- c('Mmp15','Adamts17','Hunk','Bace2')
+peakdown <- c('Spag9','Tacc3','Nfia')
+Up <- subset(OPC_DAR, FDR< .05 & avg_log2FC > 0)
+Down <- subset(OPC_DAR, FDR< .05 & avg_log2FC < 0)
+for (peak in peakup){
+     with(subset(Up, gene_name == peak),points(avg_log2FC, -log10(FDR), pch=16,cex = 1, col="#633e73"))
+}
+for (peak in peakdown){
+     with(subset(Down, gene_name == peak),points(avg_log2FC, -log10(FDR), pch=16,cex = 1, col="#327538"))
+}
