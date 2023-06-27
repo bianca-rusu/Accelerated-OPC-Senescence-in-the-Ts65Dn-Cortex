@@ -1,0 +1,108 @@
+# Load the object and required packages.
+library(Seurat)
+RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
+
+# Create new columns for the condition and replicate.
+dsRNA_1 <- strsplit(colnames(dsRNA), split = "_") 
+dsRNA@meta.data <- cbind(dsRNA@meta.data, dsRNA_1)
+colnames(dsRNA@meta.data)[which(names(dsRNA@meta.data) == "dsRNA_1")] <- "Condition"
+dsRNA_1 <- strsplit(colnames(RNA), split = "-")
+RNA@meta.data <- cbind(RNA@meta.data, dsRNA_1$X2)
+colnames(RNA@meta.data)[which(names(RNA@meta.data) == "dsRNA_1$X2")] <- "Replicate"
+RNA$replicates <-paste(RNA$Condition, RNA$rep, sep="_")
+
+# Create new columns for the percent mitochondrial DNA.
+RNA[["percent.mt"]] <- PercentageFeatureSet(RNA, pattern = "^MT-")
+
+# Generate QC violin plots of features, counts, and percent mitochondrial content.
+VlnPlot(RNA, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+VlnPlot(RNA, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3, pt.size = 0)
+
+# Generate feature scatter plots of count vs. features and percent mitochondrial content.
+plot1 <- FeatureScatter(RNA, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(RNA, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 + plot2
+
+# Overwrite the object such that only the desired cells are included.
+RNA <- subset(RNA, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+
+# Normalize the data.
+RNA <- NormalizeData(RNA, normalization.method = "LogNormalize", scale.factor = 10000)
+RNA_sub <- NormalizeData(RNA_sub)
+
+# Calculate a subset of features (2000 total) exhibiting high cell-to-cell variation.
+RNA_sub <- FindVariableFeatures(RNA_sub, selection.method = "vst", nfeatures = 2000)
+
+# Scale the data.
+all.genes <- rownames(RNA_sub)
+RNA_sub <- ScaleData(RNA_sub, features = all.genes)
+
+# Perform PCA on the scaled data with the previously determined variable features.
+RNA_sub <- RunPCA(RNA_sub, features = VariableFeatures(object = RNA))
+
+# Generate an elbow plot to identify 'significant' PCs.
+ElbowPlot(RNA)
+
+# Generate cell clusters. Select 20 dimensions for all downstream analysis.
+RNA_sub <- FindNeighbors(RNA_sub, dims = 1:20) 
+RNA_sub <- FindClusters(RNA_sub, resolution = 0.5)
+RNA_sub <- RunUMAP(RNA_sub, dims = 1:20)
+
+# Use known canonical cell markers to begin identifying cell clusters and label clusters according to cell type.
+VlnPlot(RNA, features = c([cell markers])
+FeaturePlot(RNA, features = c([cell markers])
+new.cluster.ids <- c([cluster IDs) <- levels(RNA)
+RNA <- RenameIdents(RNA, new.cluster.ids)
+
+# Create subclusters for inhibitory and excitatory neurons (same code for both; change idents = Inhibitory or Excitatory).
+RNA_Inhibitory <- subset(x = RNA, idents = "Inhibitory Neurons")
+RNA_Inhibitory <- FindVariableFeatures(RNA_Inhibitory, selection.method = "vst", nfeatures = 2000)
+top10 <- head(VariableFeatures(RNA_Inhibitory), 10)
+all.genes <- rownames(RNA_Inhibitory)
+RNA_Inhibitory <- ScaleData(RNA_Inhibitory, features = all.genes)
+RNA_Inhibitory <- RunPCA(RNA_Inhibitory, features = VariableFeatures(object = INB))
+RNA_Inhibitory <- FindNeighbors(RNA_Inhibitory, dims = 1:20) 
+RNA_Inhibitory <- FindClusters(RNA_Inhibitory, resolution = 0.5)
+RNA_Inhibitory <- RunUMAP(RNA_Inhibitory, dims = 1:20)
+Idents(RNA_Inhibitory) <- seurat_clusters
+new.cluster.ids <- c([subtypes])
+names(new.cluster.ids) <- levels(RNA_Inhibitory)
+RNA_Inhibitory <- RenameIdents(RNA_Inhibitory, new.cluster.ids)
+
+# FIG 1B: UMAP plot for all cell types snRNA-seq data.
+RNA_colors = c("indianred2", "darkorange1", "#cdaf0a", "springgreen3", "lightseagreen",
+               "lightskyblue", "royalblue1", "purple2", "magenta3", "orchid2")
+DimPlot(RNA, group.by = 'celltype', cols = RNA_colors)
+
+# FIG 1C: dotplot for all cell types select canonical marker genes.
+features = c([select_markergenes])
+RNA@active.ident <- factor(x = RNA@active.ident, levels = rev(c([celltypes])))
+mapal <- rev(colorRampPalette(RColorBrewer::brewer.pal(11,"PRGn"))(256))
+DotPlot(RNA, features = features) +
+  scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
+  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
+  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white")))+ 
+  xlab('Gene')+ ylab('Cell Type')+
+  theme(axis.text.x = element_text(angle = 90))
+ggplot(RNA_table, aes(fill=Condition, y=Percent, x=Celltype)) + 
+  geom_bar(position="stack", stat="identity") +scale_fill_manual(values=c("grey25", "#2c788e"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
+
+# FIG 1D: UMAP plot for integration of snRNA-seq and snATAC-seq.
+coembed@active.ident <- factor(x = coembed@active.ident, levels = c('ATAC', 'RNA'))
+coembed <- SetIdent(coembed, value = coembed@meta.data$orig.ident)
+p1 <- DimPlot(coembed, group.by = c("orig.ident"), cols = c("grey", "#5aae61"), order = c('ATAC', 'RNA'))
+p2 <- DimPlot(coembed, group.by = c("orig.ident"), cols = c("grey", "#9970ab"), order = c('RNA', 'ATAC'))
+
+# FIG 1E: UMAP plots for Inhibitory and Excitatory neuron subsets.
+RNA_Inhibitory <- readRDS("Ts65Dn_OPC_Senescence_RNA_Inhibitory_Object.rds")
+RNA_Excitatory <- readRDS("Ts65Dn_OPC_Senescence_RNA_Inhibitory_Object.rds")
+order_exc = c([subtypes])
+RNA_Inhibitory@active.ident <- factor(x = EXC_RNA@active.ident, levels = c([subtypes]))
+RNA_Excitatory@active.ident <- factor(x = EXC_ATAC@active.ident, levels = c([subtypes]))
+cols_inb = c("#e3eeca", "#a8d279", "#6abe44", "#2c8843", "#1e6430", "#86A137")
+cols_exc = c("#deb787", "#d8a41f", "#e3da2d", "#beb671", "#8a8657", "#9f7922", "#efe48c")
+p3 <- DimPlot(RNA_Inhibitory, cols = cols_inb, pt.size = 0.01)
+p4 <- DimPlot(RNA_Excitatory, cols = cols_exc, pt.size = 0.01)
