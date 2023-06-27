@@ -15,7 +15,7 @@ GO_results_celltype <- GO_celltype$result[,c(3:13)]
 GO_results_celltype$foldenrichment <- GO_results_celltype$precision / (GO_results_celltype$term_size /
                                                                        GO_results_celltype$effective_domain_size)
 
-# FIG 5B: barplots for glia cell types GO terms.
+# FIG 5E: barplots for glia cell types GO terms.
 mOL_GO = subset(GO_Pathways, GO_Pathways$Celltype == 'matureOL')
 mOL = ggplot(data = mOL_GO, aes(x = Pathway, y = log10padj)) +
   geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
