@@ -1,7 +1,7 @@
 # Load the required packages.
 library(ggplot2)
 
-# FIG 6B: barplot of β-Gal/Olig2 fold change.
+# FIG 8B: barplot of β-Gal/Olig2 fold change.
 ggplot(Olig2_BGal_Change, aes(x = Timepoint, y = Normalized)) +
        geom_bar(position = position_dodge(0.7), stat = 'summary',
                 fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha=0.1) +
@@ -13,7 +13,7 @@ ggplot(Olig2_BGal_Change, aes(x = Timepoint, y = Normalized)) +
                           name = "% Change in β-Gal Activity in Olig2+ Cells")+
        geom_hline(aes(yintercept = 1), color = "black", linetype = "dotted", size = 0.48)
 
-# FIG 6C: barplot of β-Gal/Pdgfrα fold change.
+# FIG 8C: barplot of β-Gal/Pdgfrα fold change.
 ggplot(Pdgfrα_βGal_Change, aes(x = Timepoint, y = Normalized)) +
        geom_bar(position = position_dodge(0.7), stat = 'summary',
                 fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha=0.1) +
@@ -25,7 +25,7 @@ ggplot(Pdgfrα_βGal_Change, aes(x = Timepoint, y = Normalized)) +
                           name = "% Change in β-Gal Activity in Pdgfrα+ Cells")+
        geom_hline(aes(yintercept = 1), color = "black", linetype = "dotted", size = 0.48)
 
-# FIG 6E: barplot of β-Gal fold changes in major cortical cell types.
+# FIG 8E: barplot of β-Gal fold changes in major cortical cell types.
 ggplot(Celltype_βGal_Change, aes(x = Celltype,y = Change)) +
        geom_bar(position = position_dodge(0.7), stat = 'summary',
                 fun.y = 'mean', width = 0.7, aes(fill = Celltype, color = Celltype), alpha = 0.1) +
