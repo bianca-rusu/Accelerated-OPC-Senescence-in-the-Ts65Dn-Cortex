@@ -10,7 +10,7 @@ RNA$celltype <- RNA@active.ident
 RNA$group_manual_labels <- paste(RNA$Condition, RNA$celltype, sep="_")
 Idents(RNA) <- RNA$group_manual_labels
 celltypes <- na.omit(unique(RNA$celltype))
-counts<-plyr::count(RNA@meta.data[, c("Condition", "group_manual_labels")])
+counts <- plyr::count(RNA@meta.data[, c("Condition", "group_manual_labels")])
 
 # Perform differential gene expression analysis (same analysis to be performed on Inhibitory and Excitatory neurons).
 DEGs <- list()
