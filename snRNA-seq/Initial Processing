@@ -54,13 +54,6 @@ FeaturePlot(RNA, features = c([cell markers])
 new.cluster.ids <- c([cluster IDs) <- levels(RNA)
 RNA <- RenameIdents(RNA, new.cluster.ids)
 
-# Find differentially expressed genes based on condition (Ts65Dn vs. CTL) for each cell type cluster:
-cluster_celltype <- subset(x = DS, idents = "Celltype")
-cluster_celltype@active.ident <- as.factor(cluster_celltype$Condition)
-cluster_celltype_markers_CTLvsDS <- FindMarkers(object = cluster_celltype, ident.1 = "Control", ident.2 = "DS",
-min.pct = 0.05, test.use = 'LR', logfc.threshold = 0.1, latent.vars = 'nCount_RNA')
-cluster_celltype_markers_CTLvsDS$FDR <- p.adjust(cluster_celltype_markers_CTLvsDS$p_val, method="BH")
-
 # Create subclusters for inhibitory and excitatory neurons (same code for both; change idents = Inhibitory or Excitatory).
 RNA_Inhibitory <- subset(x = RNA, idents = "Inhibitory Neurons")
 RNA_Inhibitory <- FindVariableFeatures(RNA_Inhibitory, selection.method = "vst", nfeatures = 2000)
