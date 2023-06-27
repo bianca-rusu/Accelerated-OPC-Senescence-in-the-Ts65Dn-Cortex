@@ -14,7 +14,7 @@ aver_chromvar <- aver_chromvar[order(aver_chromvar$max), ]
 aver_chromvar <- dplyr::select(aver_chromvar, -max)
 colnames(aver_chromvar) <- levels(Idents(sub_atac))
 
-# FIG 5E: heatmap of all cell types TF motif accessibility.
+# FIG 7A: heatmap of all cell types TF motif accessibility.
 pheatmap::pheatmap(aver_chromvar,scale = "row", cluster_cols=FALSE,cluster_rows = FALSE,
                    show_rownames=FALSE, color=rev(col.pal))
 
