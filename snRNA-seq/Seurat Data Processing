@@ -3,13 +3,13 @@ library(Seurat)
 RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
 
 # Create new columns for the condition and replicate.
-dsRNA_1 <- strsplit(colnames(dsRNA), split = "_") 
-dsRNA@meta.data <- cbind(dsRNA@meta.data, dsRNA_1)
-colnames(dsRNA@meta.data)[which(names(dsRNA@meta.data) == "dsRNA_1")] <- "Condition"
-dsRNA_1 <- strsplit(colnames(RNA), split = "-")
-RNA@meta.data <- cbind(RNA@meta.data, dsRNA_1$X2)
-colnames(RNA@meta.data)[which(names(RNA@meta.data) == "dsRNA_1$X2")] <- "Replicate"
-RNA$replicates <-paste(RNA$Condition, RNA$rep, sep="_")
+RNA_1 <- strsplit(colnames(RNA), split = "_") 
+RNA@meta.data <- cbind(RNA@meta.data, RNA_1)
+colnames(RNA@meta.data)[which(names(RNA@meta.data) == "RNA_1")] <- "Condition"
+RNA_1 <- strsplit(colnames(RNA), split = "-")
+RNA@meta.data <- cbind(RNA@meta.data, RNA_1$X2)
+colnames(RNA@meta.data)[which(names(RNA@meta.data) == "RNA_1$X2")] <- "Replicate"
+RNA$replicates <- paste(RNA$Condition, RNA$rep, sep="_")
 
 # Create new columns for the percent mitochondrial DNA.
 RNA[["percent.mt"]] <- PercentageFeatureSet(RNA, pattern = "^MT-")
