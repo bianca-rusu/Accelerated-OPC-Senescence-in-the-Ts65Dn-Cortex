@@ -46,7 +46,12 @@ all_DARs <- bind_rows(list.dar) %>%
 average_DARs <- AverageExpression(ATAC, features = all_DARs$coord, assays = "peaks")
 average_DARs[['peaks']] <- average_DARs[['peaks']][,label_row]
 
-# FIG 4A: stacked barplot of DAR distribution.
+# FIG 5A: heatmap of DAR distribution.
+col.pal <- brewer.pal(11,"PRGn")
+pheatmap::pheatmap(dar_aver[["peaks"]], scale = 'row', cluster_rows = FALSE, cluster_cols = FALSE,
+                   show_rownames = FALSE, color = rev(col.pal))
+
+# FIG 5B: stacked barplot of DAR distribution.
 ggplot(Genomic_Distribution, aes(y = Value, x = Direction,fill = Region)) + 
   geom_bar(position = "stack", stat = "identity", colour="black", width = 0.82) +
   theme(panel.background = element_blank()) +
@@ -57,12 +62,7 @@ ggplot(Genomic_Distribution, aes(y = Value, x = Direction,fill = Region)) +
   scale_y_continuous(name = "% of DARs", expand = c(0,0), limits=c(0,102))+
   theme(panel.spacing = unit(0.45, "cm"))
 
-# FIG 4B: heatmap of DAR distribution.
-col.pal <- brewer.pal(11,"PRGn")
-pheatmap::pheatmap(dar_aver[["peaks"]], scale = 'row', cluster_rows = FALSE, cluster_cols = FALSE,
-                   show_rownames = FALSE, color = rev(col.pal))
-
-# FIG 4C: pie charts of DAR distribution.
+# FIG 5C: pie charts of DAR distribution.
 upregulated_regions$ymax = cumsum(upregulated_regions$fraction)
 upregulated_regions$ymin = c(0, head(upregulated_regions$ymax, n=-1))
 ggplot(upregulated_regions, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=region)) +
