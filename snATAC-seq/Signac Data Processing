@@ -30,7 +30,8 @@ ATAC$blacklist_ratio <- ATAC$blacklist_region_fragments / ATAC$peak_region_fragm
 
 # Generate QC violin plots of nucleosome signal, TSS enrichment, and blacklist ratio.
 VlnPlot(object = ATAC, features = c('pct_reads_in_peaks', 'peak_region_fragments',
-               'TSS.enrichment', 'blacklist_ratio', 'nucleosome_signal'), pt.size = 0.1, ncol = 5)
+                                    'TSS.enrichment', 'blacklist_ratio', 'nucleosome_signal'),
+        pt.size = 0.1, ncol = 5)
 
 # Remove cells that are outliers for these QC metrics.
 ATAC <- subset(x = ATAC, subset = peak_region_fragments > 3000 & peak_region_fragments < 100000 &
@@ -49,7 +50,6 @@ ATAC <- FindClusters(object = ATAC, algorithm = 3, resolution = 1.2, verbose = F
 gene.activities <- GeneActivity(ATAC)
 ATAC[['RNA']] <- CreateAssayObject(counts = gene.activities)
 ATAC <- NormalizeData(object = ATAC, assay = 'RNA', normalization.method = 'LogNormalize', scale.factor = median(ATAC$nCount_RNA))
-saveRDS(ATAC, "DS_ATAC_Gene_Activity.rds")
 DefaultAssay(ATAC) <- 'RNA'
 
 # Use known canonical cell markers to begin identifying cell clusters and label clusters according to cell type.
@@ -62,7 +62,8 @@ DimPlot(ATAC, reduction = "umap", label = TRUE)
 RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
 DefaultAssay(RNA) <- 'RNA'
 RNA <- FindVariableFeatures(object = RNA, nfeatures = 5000)
-transfer.anchors <- FindTransferAnchors(reference = RNA, query = ATAC, features = VariableFeatures(object = RNA), reference.assay = "RNA", query.assay = "RNA", reduction = "cca")
+transfer.anchors <- FindTransferAnchors(reference = RNA, query = ATAC, features = VariableFeatures(object = RNA), reference.assay = "RNA",
+                                        query.assay = "RNA", reduction = "cca")
 predicted.labels <- TransferData(anchorset = transfer.anchors, refdata = RNA$subclass, weight.reduction = ATAC[['lsi']], dims = 2:30)
 ATAC <- AddMetaData(object = ATAC, metadata = predicted.labels)
 
@@ -91,16 +92,16 @@ features = c([select_markergenes])
 ATAC@active.ident <- factor(x = ATAC@active.ident, levels = rev(c([celltypes])))
 mapal <- rev(colorRampPalette(RColorBrewer::brewer.pal(11,"PRGn"))(256))
 DotPlot(ATAC, features = features) +
-  scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
-  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white")))+ 
-  xlab('Gene')+ ylab('Cell Type')+
-  theme(axis.text.x = element_text(angle = 90))
+        scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
+        geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
+        guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white")))+ 
+        xlab('Gene')+ ylab('Cell Type')+
+        heme(axis.text.x = element_text(angle = 90))
 ggplot(ATAC_table, aes(fill=Condition, y=Percent, x=Celltype)) + 
-  geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("grey25", "#2c788e"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
+       geom_bar(position="stack", stat="identity") + scale_fill_manual(values=c("grey25", "#2c788e"))+
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+       geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
 
 # FIG 1E: UMAP plots for Inhibitory and Excitatory neuron subsets.
 ATAC_Inhibitory <- readRDS("Ts65Dn_OPC_Senescence_ATAC_Inhibitory_Object.rds")
