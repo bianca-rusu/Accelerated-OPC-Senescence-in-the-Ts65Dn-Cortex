@@ -39,3 +39,21 @@ for (peak in peakup){
 for (peak in peakdown){
      with(subset(Down, gene_name == peak),points(avg_log2FC, -log10(FDR), pch=16,cex = 1, col="#327538"))
 }
+
+# FIG 5D: barplot of DAR summary ratio up:down regions all cell types.
+ggplot(data = ATAC_DAR_Summary, aes(x = Celltype)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(x = Celltype, y = Difference, color = Celltype, fill = Celltype)) +
+  scale_color_manual(values = c("indianred2","darkorange1", "#cdaf0a","springgreen3",
+                                "lightseagreen", "lightskyblue","darkseagreen","royalblue1",
+                                "purple2")) +
+  scale_fill_manual(values = c("indianred2","darkorange1", "#cdaf0a","springgreen3",
+                                "lightseagreen", "lightskyblue","darkseagreen","royalblue1",
+                                "purple2")) +  
+  scale_y_continuous(name = "Ratio Inc:Dec DARs", expand = c(0,0),limits = c(-1,1.5),
+                     labels = c(0.0, 0.5, 1.0, 1.5, 2.0, 2.5))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept = 0), color = "black")+
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.line.x = element_blank())
