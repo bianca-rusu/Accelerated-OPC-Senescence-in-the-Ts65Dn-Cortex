@@ -1,0 +1,80 @@
+# Load the object and required packages.
+library(Signac)
+library(Seurat)
+library(GenomeInfoDb)
+library(harmony)
+library(EnsDb.Mmusculus.v79)
+library(ggplot2)
+library(here)
+library(tibble)
+library(dplyr)
+library(openxlsx)
+library(ChIPseeker)
+library(TxDb.Mmusculus.UCSC.mm10.knownGene)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(viridis)
+library(RColorBrewer)
+ATAC <- readRDS("Ts65Dn_OPC_Senescence_ATAC_Object.rds")
+Idents(ATAC) <- 'group_manual_labels'
+
+# Load in the differentially accessible regions (DAR) file.
+darfile <- "Ts65Dn_DARs.xlsx"
+idents <- getSheetNames(darfile)
+list.dar <- lapply(idents, function(x) {
+  df <- read.xlsx(darfile, sheet = x, rowNames = T) %>%
+    rownames_to_column(var = "coord") %>%
+    dplyr::mutate(comparison = x)
+})
+
+# Calculate regions with increased and decreased accessibility, and all accessible regions in Ts65Dn.
+upregulated_DARs <- bind_rows(list.dar) %>%
+  dplyr::filter(avg_log2FC > 0) %>%
+  dplyr::filter(FDR <0.05) %>%
+  dplyr::select("coord") %>%
+  dplyr::distinct()
+downregulated_DARs <- bind_rows(list.dar) %>%
+  dplyr::filter(avg_log2FC < 0) %>%
+  dplyr::filter(FDR <0.05) %>%
+  dplyr::select("coord") %>%
+  dplyr::distinct()
+label_row <- c([celltypes])
+all_DARs <- bind_rows(list.dar) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  dplyr::select("coord") %>%
+  dplyr::distinct()
+average_DARs <- AverageExpression(ATAC, features = all_DARs$coord, assays = "peaks")
+average_DARs[['peaks']] <- average_DARs[['peaks']][,label_row]
+
+# FIG 4A: stacked barplot of DAR distribution.
+ggplot(Genomic_Distribution, aes(y = Value, x = Direction,fill = Region)) + 
+  geom_bar(position = "stack", stat = "identity", colour="black", width = 0.82) +
+  theme(panel.background = element_blank()) +
+  theme(axis.line = element_line(colour = "black"))+
+  scale_fill_manual(values=c("#749fb5","#ad7b8d","#6a947f", "#bbdced", "#d1aeba", "#b2d1c1"))+
+  facet_grid(~ Celltype)+
+  theme(strip.background = element_blank(),strip.text.x = element_blank())+  
+  scale_y_continuous(name = "% of DARs", expand = c(0,0), limits=c(0,102))+
+  theme(panel.spacing = unit(0.45, "cm"))
+
+# FIG 4B: heatmap of DAR distribution.
+col.pal <- brewer.pal(11,"PRGn")
+pheatmap::pheatmap(dar_aver[["peaks"]], scale = 'row', cluster_rows = FALSE, cluster_cols = FALSE,
+                   show_rownames = FALSE, color = rev(col.pal))
+
+# FIG 4C: pie charts of DAR distribution.
+upregulated_regions$ymax = cumsum(upregulated_regions$fraction)
+upregulated_regions$ymin = c(0, head(upregulated_regions$ymax, n=-1))
+ggplot(upregulated_regions, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=region)) +
+  geom_rect(color = "black") + coord_polar(theta="y") + xlim(c(2, 4))+ theme_void() +
+  scale_fill_manual(values = c("#9edbe1","#9ecae1","#3182bd","#9496d1","#bf7ec0",
+                               "#cd99d8","#d194b1","#d1949c", "#c7a76c","#c7e9b4","#7fcdbb")) +
+  guides(fill = guide_legend(title = "Region"))
+downregulated_regions <- read.xlsx("Downregulated_DAR_Region.xlsx")
+downregulated_regions$ymax = cumsum(downregulated_regions$fraction)
+downregulated_regions$ymin = c(0, head(downregulated_regions$ymax, n=-1))
+ggplot(downregulated_regions, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=region, color = region)) +
+  geom_rect(color = "black") + coord_polar(theta="y") + xlim(c(2, 4))+ theme_void() +
+  scale_fill_manual(values = c("#9edbe1","#9ecae1","#3182bd","#9496d1","#bf7ec0",
+                               "#cd99d8","#d194b1","#d1949c", "#c7a76c","#c7e9b4","#7fcdbb")) +
+  guides(fill = guide_legend(title = "Region"))
