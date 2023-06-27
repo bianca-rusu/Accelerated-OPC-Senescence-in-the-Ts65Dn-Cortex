@@ -79,16 +79,16 @@ features = c([select_markergenes])
 RNA@active.ident <- factor(x = RNA@active.ident, levels = rev(c([celltypes])))
 mapal <- rev(colorRampPalette(RColorBrewer::brewer.pal(11,"PRGn"))(256))
 DotPlot(RNA, features = features) +
-  scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
-  geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
-  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white"))) + 
-  xlab('Gene') + ylab('Cell Type') +
-  theme(axis.text.x = element_text(angle = 90))
+        scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
+        geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
+        guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white"))) + 
+        xlab('Gene') + ylab('Cell Type') +
+        theme(axis.text.x = element_text(angle = 90))
 ggplot(RNA_table, aes(fill=Condition, y=Percent, x=Celltype)) + 
-  geom_bar(position="stack", stat="identity") +scale_fill_manual(values=c("grey25", "#2c788e")) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
+       geom_bar(position="stack", stat="identity") +scale_fill_manual(values=c("grey25", "#2c788e")) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
 
 # FIG 1D: UMAP plot for integration of snRNA-seq and snATAC-seq.
 coembed@active.ident <- factor(x = coembed@active.ident, levels = c('ATAC', 'RNA'))
