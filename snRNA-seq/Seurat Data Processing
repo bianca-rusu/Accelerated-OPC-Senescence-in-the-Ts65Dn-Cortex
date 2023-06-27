@@ -81,13 +81,13 @@ mapal <- rev(colorRampPalette(RColorBrewer::brewer.pal(11,"PRGn"))(256))
 DotPlot(RNA, features = features) +
   scale_color_gradientn(colours = mapal, limits = c(0,1), oob = scales::squish) +
   geom_point(aes(size=pct.exp), shape = 21, colour="black", stroke=0.5) +
-  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white")))+ 
-  xlab('Gene')+ ylab('Cell Type')+
+  guides(size=guide_legend(override.aes=list(shape=21, colour="black", fill="white"))) + 
+  xlab('Gene') + ylab('Cell Type') +
   theme(axis.text.x = element_text(angle = 90))
 ggplot(RNA_table, aes(fill=Condition, y=Percent, x=Celltype)) + 
-  geom_bar(position="stack", stat="identity") +scale_fill_manual(values=c("grey25", "#2c788e"))+
+  geom_bar(position="stack", stat="identity") +scale_fill_manual(values=c("grey25", "#2c788e")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
   geom_hline(yintercept=0.5, linetype='dashed', col = 'white')
 
 # FIG 1D: UMAP plot for integration of snRNA-seq and snATAC-seq.
@@ -100,8 +100,8 @@ p2 <- DimPlot(coembed, group.by = c("orig.ident"), cols = c("grey", "#9970ab"), 
 RNA_Inhibitory <- readRDS("Ts65Dn_OPC_Senescence_RNA_Inhibitory_Object.rds")
 RNA_Excitatory <- readRDS("Ts65Dn_OPC_Senescence_RNA_Inhibitory_Object.rds")
 order_exc = c([subtypes])
-RNA_Inhibitory@active.ident <- factor(x = EXC_RNA@active.ident, levels = c([subtypes]))
-RNA_Excitatory@active.ident <- factor(x = EXC_ATAC@active.ident, levels = c([subtypes]))
+RNA_Inhibitory@active.ident <- factor(x = RNA_Inhibitory@active.ident, levels = c([subtypes]))
+RNA_Excitatory@active.ident <- factor(x = RNA_Excitatory@active.ident, levels = c([subtypes]))
 cols_inb = c("#e3eeca", "#a8d279", "#6abe44", "#2c8843", "#1e6430", "#86A137")
 cols_exc = c("#deb787", "#d8a41f", "#e3da2d", "#beb671", "#8a8657", "#9f7922", "#efe48c")
 p3 <- DimPlot(RNA_Inhibitory, cols = cols_inb, pt.size = 0.01)
