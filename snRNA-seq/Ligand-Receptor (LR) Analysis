@@ -1,0 +1,269 @@
+# Load the object and required packages.
+library(pryr)
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(CellChat)
+library(NMF)
+library(ggalluvial)
+RNA_Seurat <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
+
+# Assign Seurat clusters to cell types and conditions as DS and Control.
+RNA_Seurat$cluster_identities <- plyr::mapvalues(x = RNA$seurat_clusters,from = c([cluster-ids]),to = c([celltype]))
+RNA <- subset(RNA_Seurat, idents = c([celltype]))
+RNA = droplevels(RNA, drop.unused.levels = T)
+data.input_1 <- GetAssayData(RNA, assay = "RNA", slot = "data")
+data.input_2 <- GetAssayData(RNA, assay = "RNA", slot = "data")
+meta = RNA@meta.data
+meta_1 <- meta[RNA@meta.data[["Condition"]] == "Control",]
+meta_2 <- meta[RNA@meta.data[["Condition"]] == "DS",]
+cell.use = rownames(meta)[RNA@meta.data[["Condition"]] == "Control"]             
+data.input_1 = data.input_1[, cell.use]
+cell.use = rownames(meta)[RNA@meta.data[["Condition"]] == "DS"]
+data.input_2 = data.input_2[, cell.use]
+
+# Create CellChat objects and load the database.
+cellchat.Control <- createCellChat(object = data.input_1, meta = meta_1, group.by = "cluster_identities")
+cellchat.DS <- createCellChat(object = data.input_2, meta = meta_2, group.by = "cluster_identities")
+CellChatDB <- CellChatDB.mouse
+CellChatDB.use <- subsetDB(CellChatDB, search = "Secreted Signaling") 
+
+# Run CellChat for the Control samples.
+cellchat.Control@DB <- CellChatDB.use
+cellchat.Control <- subsetData(cellchat.Control)
+future::plan("multiprocess", workers = 4)
+future.seed=TRUE 
+cellchat.Control <- identifyOverExpressedGenes(cellchat.Control)
+cellchat.Control <- identifyOverExpressedInteractions(cellchat.Control)
+cellchat.Control <- computeCommunProb(cellchat.Control, raw.use = TRUE)
+cellchat.Control <- filterCommunication(cellchat.Control, min.cells = 10)
+cellchat.Control <- computeCommunProbPathway(cellchat.Control)
+cellchat.Control <- aggregateNet(cellchat.Control)
+cellchat.Control <- netAnalysis_computeCentrality(cellchat.Control, slot.name = "netP")
+
+# Run CellChat for the Ts65Dn samples.
+cellchat.DS@DB <- CellChatDB.use
+cellchat.DS <- subsetData(cellchat.DS)
+future::plan("multiprocess", workers = 4) 
+future.seed=TRUE 
+cellchat.DS <- identifyOverExpressedGenes(cellchat.DS)
+cellchat.DS <- identifyOverExpressedInteractions(cellchat.DS)
+cellchat.DS <- computeCommunProb(cellchat.DS, raw.use = TRUE)
+cellchat.DS <- filterCommunication(cellchat.DS, min.cells = 10)
+cellchat.DS <- computeCommunProbPathway(cellchat.DS)
+cellchat.DS <- aggregateNet(cellchat.DS)
+cellchat.DS <- netAnalysis_computeCentrality(cellchat.DS, slot.name = "netP")
+object.list <- list(Control = cellchat.Control, DS = cellchat.DS)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+# Merge the two objects (Control and DS) together.
+object.list <- list(Control = cellchat.Control, DS = cellchat.DS)
+cellchat <- mergeCellChat(object.list, add.names = names(object.list))
+
+#Identify signaling groups based on their functional similarity
+computeNetSimilarityPairwise <- function(object, slot.name = "netP", type = c("functional","structural"),
+comparison = NULL, k = NULL, thresh = NULL) {
+   type <- match.arg(type)
+   if (is.null(comparison)) {
+     comparison <- 1:length(unique(object@meta$datasets))
+   }
+   cat("Compute signaling network similarity for datasets", as.character(comparison), '\n')
+   comparison.name <- paste(comparison, collapse = "-")
+   net <- list()
+   signalingAll <- c()
+   object.net.nameAll <- c()
+   for (i in 1:length(comparison)) {
+     object.net <- methods::slot(object, slot.name)[[comparison[i]]]
+     object.net.name <- names(methods::slot(object, slot.name))[comparison[i]]
+     object.net.nameAll <- c(object.net.nameAll, object.net.name)
+     net[[i]] = object.net$prob
+     signalingAll <- c(signalingAll, paste0(dimnames(net[[i]])[[3]], "--", object.net.name))
+   }
+   names(net) <- object.net.nameAll
+   net.dim <- sapply(net, dim)[3,]
+   nnet <- sum(net.dim)
+   position <- cumsum(net.dim); position <- c(0,position)
+   if (is.null(k)) {
+     if (nnet <= 25) {
+       k <- ceiling(sqrt(nnet))
+     } else {
+       k <- ceiling(sqrt(nnet)) + 1
+     }
+   }
+   if (!is.null(thresh)) {
+     for (i in 1:length(net)) {
+       neti <- net[[i]]
+       neti[neti < quantile(c(neti[neti != 0]), thresh)] <- 0
+       net[[i]] <- neti
+     }
+   }
+   if (type == "functional") {
+     S3 <- matrix(0, nrow = nnet, ncol = nnet)
+     for (i in 1:nnet) {
+       for (j in 1:nnet) {
+         idx.i <- which(position - i >= 0)[1]
+         idx.j <- which(position - j >= 0)[1]
+         net.i <- net[[idx.i-1]]
+         net.j <- net[[idx.j-1]]
+         Gi <- (net.i[ , ,i-position[idx.i-1]] > 0)*1
+         Gj <- (net.j[ , ,j-position[idx.j-1]] > 0)*1
+         S3[i,j] <- sum(Gi * Gj)/sum(Gi+Gj-Gi*Gj,na.rm=TRUE)
+       }
+     }
+     S3[is.na(S3)] <- 0;  diag(S3) <- 1
+     S_signalings <- S3
+   } else if (type == "structural") {
+     D_signalings <- matrix(0, nrow = nnet, ncol = nnet)
+     for (i in 1:nnet) {
+       for (j in 1:nnet) {
+         idx.i <- which(position - i >= 0)[1]
+         idx.j <- which(position - j >= 0)[1]
+         net.i <- net[[idx.i-1]]
+         net.j <- net[[idx.j-1]]
+         Gi <- (net.i[ , ,i-position[idx.i-1]] > 0)*1
+         Gj <- (net.j[ , ,j-position[idx.j-1]] > 0)*1
+         D_signalings[i,j] <- computeNetD_structure(Gi,Gj)
+       }
+     }
+     D_signalings[is.infinite(D_signalings)] <- 0
+     D_signalings[is.na(D_signalings)] <- 0
+     S_signalings <- 1-D_signalings
+   }
+   SNN <- buildSNN(S_signalings, k = k, prune.SNN = 1/15)
+   Similarity <- as.matrix(S_signalings*SNN)
+   rownames(Similarity) <- signalingAll
+   colnames(Similarity) <- rownames(Similarity)
+   if (!is.list(methods::slot(object, slot.name)$similarity[[type]]$matrix)) {
+     methods::slot(object, slot.name)$similarity[[type]]$matrix <- NULL
+   }
+   methods::slot(object, slot.name)$similarity[[type]]$matrix[[comparison.name]] <- Similarity
+   return(object)
+}
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "functional")
+netEmbedding <- function(object, slot.name = "netP", type = c("functional","structural"),
+comparison = NULL, pathway.remove = NULL, k = NULL) {
+   if (object@options$mode == "single") {
+     comparison <- "single"
+     cat("Manifold learning of the signaling networks for a single dataset", '\n')
+   } else if (object@options$mode == "merged") {
+     if (is.null(comparison)) {
+       comparison <- 1:length(unique(object@meta$datasets))
+     }
+     cat("Manifold learning of the signaling networks for datasets", as.character(comparison), '\n')
+   }
+   comparison.name <- paste(comparison, collapse = "-")
+   Similarity <- methods::slot(object, slot.name)$similarity[[type]]$matrix[[comparison.name]]
+   if (is.null(pathway.remove)) {
+     pathway.remove <- rownames(Similarity)[which(colSums(Similarity) == 1)]
+   }
+   if (length(pathway.remove) > 0) {
+     pathway.remove.idx <- which(rownames(Similarity) %in% pathway.remove)
+     Similarity <- Similarity[-pathway.remove.idx, -pathway.remove.idx]
+   }
+   if (is.null(k)) {
+     k <- ceiling(sqrt(dim(Similarity)[1])) + 1
+   }
+   options(warn = -1)
+   Y <- runUMAP(Similarity, min.dist = 0.3, n.neighbors = k)
+   if (!is.list(methods::slot(object, slot.name)$similarity[[type]]$dr)) {
+     methods::slot(object, slot.name)$similarity[[type]]$dr <- NULL
+   }
+   methods::slot(object, slot.name)$similarity[[type]]$dr[[comparison.name]] <- Y
+   return(object)
+ }
+cellchat <- netEmbedding(cellchat, type = "functional")
+netClustering <- function(object, slot.name = "netP", type = c("functional","structural"),
+comparison = NULL, k = NULL, methods = "kmeans", do.plot = TRUE, fig.id = NULL, do.parallel = TRUE, nCores = 4, k.eigen = NULL) {
+   type <- match.arg(type)
+   if (object@options$mode == "single") {
+     comparison <- "single"
+     cat("Classification learning of the signaling networks for a single dataset", '\n')
+   } else if (object@options$mode == "merged") {
+     if (is.null(comparison)) {
+       comparison <- 1:length(unique(object@meta$datasets))
+     }
+     cat("Classification learning of the signaling networks for datasets", as.character(comparison), '\n')
+   }
+   comparison.name <- paste(comparison, collapse = "-")
+   Y <- methods::slot(object, slot.name)$similarity[[type]]$dr[[comparison.name]]
+   Y[is.na(Y)] <- 0
+   data.use <- Y
+   if (methods == "kmeans") {
+     if (!is.null(k)) {
+       clusters = kmeans(data.use,k,nstart=10)$cluster
+     } else {
+       N <- nrow(data.use)
+       kRange <- seq(2,min(N-1, 10),by = 1)
+       if (do.parallel) {
+         future::plan("multiprocess", workers = nCores)
+         future.seed=TRUE
+         options(future.globals.maxSize = 1000 * 1024^2)
+       }
+       my.sapply <- ifelse(
+         test = future::nbrOfWorkers() == 1,
+         yes = pbapply::DSapply,
+         no = future.apply::future_sapply
+       )
+       results = my.sapply(
+         X = 1:length(kRange),
+         FUN = function(x) {
+           idents <- kmeans(data.use,kRange[x],nstart=10)$cluster
+           clusIndex <- idents
+           #adjMat0 <- as.numeric(outer(clusIndex, clusIndex, FUN = "==")) - outer(1:N, 1:N, "==")
+           adjMat0 <- Matrix::Matrix(as.numeric(outer(clusIndex, clusIndex, FUN = "==")), nrow = N, ncol = N)
+           return(list(adjMat = adjMat0, ncluster = length(unique(idents))))
+         },
+         simplify = FALSE
+       )
+       adjMat <- lapply(results, "[[", 1)
+       CM <- Reduce('+', adjMat)/length(kRange)
+       res <- computeEigengap(as.matrix(CM))
+       numCluster <- res$upper_bound
+       clusters = kmeans(data.use,numCluster,nstart=10)$cluster
+       if (do.plot) {
+         gg <- res$gg.obj
+         ggsave(filename= paste0("estimationNumCluster_",fig.id,"_",type,"_dataset_",comparison.name,".pdf"), plot=gg, width= 3.5, height = 3, units = 'in', dpi = 300)
+       }
+     }
+   } else if (methods == "spectral") {
+     A <- as.matrix(data.use)
+     D <- apply(A, 1, sum)
+     L <- diag(D)-A                       # unnormalized version
+     L <- diag(D^-0.5)%*%L%*% diag(D^-0.5) # normalized version
+     evL <- eigen(L,symmetric=TRUE)  # evL$values is decreasing sorted when symmetric=TRUE
+     # pick the first k first k eigenvectors (corresponding k smallest) as data points in spectral space
+     plot(rev(evL$values)[1:30])
+     Z <- evL$vectors[,(ncol(evL$vectors)-k.eigen+1):ncol(evL$vectors)]
+     clusters = kmeans(Z,k,nstart=20)$cluster
+   }
+   if (!is.list(methods::slot(object, slot.name)$similarity[[type]]$group)) {
+     methods::slot(object, slot.name)$similarity[[type]]$group <- NULL
+   }
+   methods::slot(object, slot.name)$similarity[[type]]$group[[comparison.name]] <- clusters
+   return(object)
+ }
+cellchat <- netClustering(cellchat, type = "functional")
+netVisual_embeddingPairwise(cellchat, type = "functional", label.size = 3.5)
+
+# Identify signaling groups based on structural similarity.
+cellchat <- computeNetSimilarityPairwise(cellchat, type = "structural")
+cellchat <- netEmbedding(cellchat, type = "structural")
+cellchat <- netClustering(cellchat, type = "structural")
+netVisual_embeddingPairwise(cellchat, type = "structural", label.size = 3.5)
+
+# Identify dysfunctional signaling by using differential expression analysis.
+pos.dataset = "Control"
+features.name = pos.dataset
+cellchat <- identifyOverExpressedGenes(cellchat, group.dataset = "datasets", pos.dataset = pos.dataset, features.name = features.name, only.pos = FALSE, thresh.pc = 0.1, thresh.fc = 0.1, thresh.p = 1)
+net <- netMappingDEG(cellchat, features.name = features.name)
+net.up <- subsetCommunication(cellchat, net = net, datasets = "Control",ligand.logFC = 0.1, receptor.logFC = NULL)
+net.down <- subsetCommunication(cellchat, net = net, datasets = "DS",ligand.logFC = -0.1, receptor.logFC = -0.1)
+gene.up <- extractGeneSubsetFromPair(net.up, cellchat)
+gene.down <- extractGeneSubsetFromPair(net.down, cellchat)
+
+# FIG 3F/G: chord diagrams for up/downregulated LR signaling in Ts65Dn mice.
+par(mfrow = c(1,2), xpd=TRUE)
+Control <- netVisual_chord_gene(object.list[["Control"]], slot.name = 'net', net = net.up,  lab.cex = 0.8, small.gap = 1,
+annotationTrackHeight = c(0.01), big.gap = 0.1, title.name = paste0("Up-regulated signaling in ", names(object.list)[2]))
+DS <- netVisual_chord_gene(object.list[["Control"]], slot.name = 'net', net = net.down, lab.cex = 0.8, small.gap = 3.5,
+annotationTrackHeight = c(0.01), title.name = paste0("Down-regulated signaling in ", names(object.list)[2]))
