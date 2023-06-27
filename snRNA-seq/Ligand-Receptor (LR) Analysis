@@ -260,7 +260,7 @@ net.down <- subsetCommunication(cellchat, net = net, datasets = "DS",ligand.logF
 gene.up <- extractGeneSubsetFromPair(net.up, cellchat)
 gene.down <- extractGeneSubsetFromPair(net.down, cellchat)
 
-# FIG 3F/G: chord diagrams for up/downregulated LR signaling in Ts65Dn mice.
+# FIG 4F/G: chord diagrams for up/downregulated LR signaling in Ts65Dn mice.
 par(mfrow = c(1,2), xpd=TRUE)
 Control <- netVisual_chord_gene(object.list[["Control"]], slot.name = 'net', net = net.up,  lab.cex = 0.8, small.gap = 1,
 annotationTrackHeight = c(0.01), big.gap = 0.1, title.name = paste0("Up-regulated signaling in ", names(object.list)[2]))
