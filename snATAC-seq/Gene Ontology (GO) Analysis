@@ -1,0 +1,48 @@
+# Load the object and required packages.
+library(gprofiler2)
+ATAC <- readRDS("Ts65Dn_OPC_Senescence_ATAC_Object.rds")
+
+# Read in the differentially accessible regions (DARs) file for each cell type and filter for significant DARs.
+celltype <- read.csv("Ts65Dn_DARs_Celltype.csv")
+significant_DARs_celltype <- celltype$gene_name[celltype$FDR<0.05]
+
+# Perform GO analysis.
+GO_celltype <- gost(query = significant_DARs_celltype, organism = "mmusculus", ordered_query = FALSE, multi_query = FALSE,
+                    significant = TRUE, exclude_iea = FALSE, measure_underrepresentation = FALSE, evcodes = FALSE,
+                    user_threshold = 0.05, correction_method = "fdr", domain_scope = "annotated", custom_bg = NULL,
+                    numeric_ns = "", sources = NULL, as_short_link = FALSE)
+GO_results_celltype <- GO_celltype$result[,c(3:13)]
+GO_results_celltype$foldenrichment <- GO_results_celltype$precision / (GO_results_celltype$term_size /
+                                                                       GO_results_celltype$effective_domain_size)
+
+# FIG 5B: barplots for glia cell types GO terms.
+mOL_GO = subset(GO_Pathways, GO_Pathways$Celltype == 'matureOL')
+mOL = ggplot(data = mOL_GO, aes(x = Pathway, y = log10padj)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(color = Celltype, fill = Celltype))+
+  scale_color_manual(values = c("lightseagreen"))+
+  scale_fill_manual(values = c("lightseagreen"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  scale_y_continuous(position = "right", expand = c(0,0),limits = c(0,9.5))
+OPC_GO = subset(GO_Pathways, GO_Pathways$Celltype == 'OPCs') # 3x s
+OPC = ggplot(data = OPC_GO, aes(x = Pathway, y = log10padj)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(color = Celltype, fill = Celltype))+
+  scale_color_manual(values = c("royalblue1"))+
+  scale_fill_manual(values = c("royalblue1"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  scale_y_continuous(position = "right", expand = c(0,0),limits = c(0,13))
+Micro_GO = subset(GO_Pathways, GO_Pathways$Celltype == 'microglia') # 12x a
+Micro = ggplot(data = Micro_GO, aes(x = Pathway, y = log10padj)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(color = Celltype, fill = Celltype))+
+  scale_color_manual(values = c("lightskyblue"))+
+  scale_fill_manual(values = c("lightskyblue"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  scale_y_continuous(position = "right", expand = c(0,0),limits = c(0,1.8))
