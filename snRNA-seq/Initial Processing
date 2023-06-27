@@ -1,4 +1,4 @@
-# Load the object.
+# Load the object and required packages.
 library(Seurat)
 RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
 
