@@ -1,0 +1,43 @@
+# Load the required packages.
+library(ggplot2)
+
+# Create function for determining standard deviation.
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+
+# FIG 10E: barplot of freezing time.
+time_dataframe <- data_summary(Time_Data, varname = "Time", groupnames = c("Genotype", "Test"))
+time_dataframe$Test = as.factor(time_dataframe$Test)
+ggplot(Time_Data, aes(x = Test, y = Time)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Genotype, color = Genotype), alpha = 0.1) +
+       geom_errorbar(data = time_dataframe, position = position_dodge(0.7), size = 0.3, width = 0.15,
+                     aes(ymin = Time-sd, ymax = Time+sd, fill = Genotype)) +
+       geom_point(aes(x = Test, fill = Genotype), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(color = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,300, by = 100), limits = c(0,300), expand = c(0,0))
+
+# FIG 10E: barplot of freezing percentage.
+percentage_dataframe <- data_summary(Percentage_Data, varname = "Value", groupnames = c("Genotype", "Test"))
+percentage_dataframe$Test = as.factor(percentage_dataframe$Test)
+ggplot(Percentage_Data, aes(x = Test, y = Time)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Genotype, color = Genotype), alpha = 0.1) +
+       geom_errorbar(data = percentage_dataframe, position = position_dodge(0.7), size = 0.3, width = 0.15,
+                     aes(ymin = Time-sd, ymax = Time+sd, fill = Genotype)) +
+       geom_point(aes(x = Test, fill = Genotype), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(color = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,90, by = 30), limits = c(0,90), expand = c(0,0))
