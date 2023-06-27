@@ -1,0 +1,107 @@
+# Load the required packages.
+library(ggplot2)
+
+# FIG 8G: barplot of Lmnb1/Pdgfrα fold change.
+ggplot(LaminB1_Pdgfra, aes(x = Timepoint, y = Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.2) +
+       geom_point(aes(x = Timepoint, fill = Condition), shape = 21,position = position_dodge(0.7),
+                  size = 1, stroke = 0.4) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,1.3, by = 0.25), limits = c(0,1.25), expand = c(0,0))
+
+# FIG 8H/J: barplot of Ki67/Pdgfrα fold change.
+ggplot(Ki67_Pdgfrα, aes(x = Timepoint, y = Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.2) +
+       geom_point(aes(x = Timepoint, fill = Condition), shape = 21, position = position_dodge(0.7),
+                  size = 1, stroke = 0.4) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,2.5, by = 0.5), limits = c(0,2.5), expand = c(0,0))
+
+# FIG 9B: barplot of Pdgfrα/Olig2 percentages.
+ggplot(Pdgfrα_Olig2, aes(x=Timepoint,y=Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.15) +
+       geom_point(aes(x = Timepoint, fill = Condition), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,72, by = 10), limits = c(0,72), expand = c(0,0))
+
+# FIG 9C: barplot of CC1/Olig2 percentages.
+ggplot(CC1_Olig2, aes(x=Timepoint,y=Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition, color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.15) +
+       geom_point(aes(x = Timepoint, fill = Condition), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,72, by = 10), limits = c(0,72), expand = c(0,0))
+
+# FIG 9D: barplot of Mbp fold change.
+ggplot(Mbp_fold_change, aes(x = Condition, y = Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition,color = Condition), alpha = 0.1) +
+       geom_errorbar(aes(ymin = Value-SD, ymax = Value+SD), position = position_dodge(0.7),
+                     size = 0.3, width = 0.15) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,1.25, by = 0.25), limits = c(0,1.25), expand = c(0,0))
+
+# FIG 9E: barplot of Mbp intensity.
+ggplot(Mbp_intensity, aes(x = Timepoint, y = Value)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition,color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.15) +
+       geom_point(aes(x = Timepoint,fill = Condition), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,1.2, by = 0.3), limits = c(0,1.25), expand = c(0,0))
+
+# FIG 10A: barplot of Iba1 cell counts.
+ggplot(Iba1, aes(x = Timepoint, y = Value_Area)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition,color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.15) +
+       geom_point(aes(x = Timepoint,fill = Condition), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,90, by = 30), limits = c(0,90), expand = c(0,0))
+
+# FIG 10B: barplot of Cd68/Iba1 cell counts.
+ggplot(Cd68_Iba1, aes(x = Timepoint, y = Value_Area)) +
+       geom_bar(position = position_dodge(0.7), stat = 'summary',
+                fun.y = 'mean', width = 0.55, aes(fill = Condition,color = Condition), alpha = 0.1) +
+       geom_errorbar(stat = 'summary', position = position_dodge(0.7),
+                     aes(fill = Condition), size = 0.3, width = 0.15) +
+       geom_point(aes(x = Timepoint,fill = Condition), shape = 21,position = position_dodge(0.7), size = 0.7) +
+       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+             panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+       scale_color_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_fill_manual(values = c("grey25", "#2c788e", "#38a783")) +
+       scale_y_continuous(breaks = seq(0,1, by = 0.25), limits = c(0,0.9), expand = c(0,0))
