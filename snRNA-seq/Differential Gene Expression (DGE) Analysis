@@ -38,3 +38,53 @@ for(celltype in names(DEGs)){
   dat <- DEGs[[celltype]]
   write_xlsx(dat, paste0(celltype, "_DGE.xlsx"))
 }
+
+# FIG 2A: striplot of all cell types DEGs.
+bind <- rbind(a,b,c,d,e,f,g,h,i,j)
+n <- length(rownames(bind))
+for (i in 1:n) {
+  bind$Classification[i] <- paste0(bind$celltype[i],",S")
+  if (bind$FDR[i] > 0.05) {bind$Classification[i] <- "AnonS"}
+  if (abs(bind$avg_log2FC[i]) < 0.2){bind$Classification[i] <- "AnonS"}
+}
+bind <- bind[order(bind$Classification),]
+colors <- c("indianred2","darkorange1","#cdaf0a","springgreen3","lightseagreen",
+            "lightskyblue","royalblue1","purple2", "magenta3","orchid2")
+set.seed(2)
+ggplot(bind, aes(x=celltype,y=avg_log2FC,color=Classification), pch=16, cex=0.01)+
+  geom_jitter(width = 0.07,height = 0)+
+  labs(title = "Gene Expression in DS vs. Control",size = 0.05,
+       x="Cell Type", y="Avg Log2FC")+
+  scale_y_continuous(limit = c(-2,2))+
+  scale_color_manual(values=colors)+
+  geom_hline(yintercept=0)+
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust = 0.5), 
+        axis.line = element_line (color = "black"),
+        plot.title = element_text(hjust = 0.5,size = 15),legend.position='none',
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank())
+
+# Fig 2B: UpSet plot of all cell types DEGs.
+astrocytes_DEGs <- (astrocytes[astrocytes$FDR < 0.05,])$location
+endothelial_DEGs <- (endothelial[endothelial$FDR < 0.05,])$location
+excitatory_DEGs <- (excitatory[excitatory$FDR < 0.05,])$location
+inhibitory_DEGs <- (inhibitory[inhibitory$FDR < 0.05,])$location
+microglia_DEGs <- (microglia[microglia$FDR < 0.05,])$location
+mOLs_DEGs <- (mOLs[mOLs$FDR < 0.05,])$location
+OPCs_DEGs <- (OPCs[OPCs$FDR < 0.05,])$location
+pericytes_DEGs <- (pericytes[pericytes$FDR < 0.05,])$location
+smc1_DEGs <- (smc1[smc1$FDR < 0.05,])$location
+smc2_DEGs <- (smc2[smc2$FDR < 0.05,])$location
+library(UpSetR)
+greys = rep(c("grey60","grey40","grey10"), times = c(21,9,50))
+cells <- list("Astrocytes" = astrocytes_DEGs, "Endothelial" = endothelial_DEGs,
+              "Excitatory" = excitatory_DEGs, "Inhibitory" = inhibitory_DEGs,
+              "Mature OLs" = mOLs_DEGs, "Microglia" = microglia_DEGs, "OPCs" = OPCs_DEGs,
+              "Pericytes" = pericytes_DEGs, "SMCs1" = smc1_DEGs, "SMCs2" = smc2_DEGs)
+upset(fromList(cells), nsets = 10, keep.order = TRUE, 
+      sets = c("SMCs2", "SMCs1", "Pericytes","OPCs","Microglia","Mature OLs",
+               "Inhibitory","Excitatory","Endothelial","Astrocytes"),
+      sets.bar.color = c("orchid2","magenta3","purple2","royalblue1","lightskyblue","lightseagreen",
+                         "springgreen3","#cdaf0a","darkorange1","indianred2"),
+      main.bar.color = c("springgreen3","#cdaf0a","lightseagreen","indianred2","royalblue1","lightskyblue",
+                         "darkorange1","magenta3","purple2","orchid2",greys))
