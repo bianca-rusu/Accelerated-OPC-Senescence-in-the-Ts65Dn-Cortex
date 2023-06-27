@@ -54,7 +54,7 @@ for (celltype in cellgroups ){
      outputname <- paste0('gsea_Reactome_RNA_msigdbr_DS_vs_Control_',celltype,'.xlsx')
 }
 
-# FIG 2D: barplot for all cell types GSEA pathways.
+# FIG 3A: barplot for all cell types GSEA pathways.
 ggplot(data = GSEA_Pathways, aes(x = Pathway)) +
        geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
                 aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
@@ -72,7 +72,7 @@ ggplot(data = GSEA_Pathways, aes(x = Pathway)) +
        geom_hline(aes(yintercept=0.215), color="black", linetype="dotted", size=0.75)+
        theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-# FIG 2E: barplot for glia cells GSEA pathways.
+# FIG 3B: barplot for glia cells GSEA pathways.
 ggplot(data = GSEA_Pathways_Glia, aes(x = Pathway)) +
        geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
                 aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
@@ -88,13 +88,13 @@ ggplot(data = GSEA_Pathways_Glia, aes(x = Pathway)) +
        geom_hline(aes(yintercept=0.53), color="black", linetype="dotted", size=0.75)+
        theme(axis.text.x = element_text(angle = 45, hjust=1))
 
-# FIG 3A: GSEA plot for OPCs SenMayo enrichment score.
+# FIG 4A: GSEA plot for OPCs SenMayo enrichment score.
 colnames(gseatable)[1] = cell
 gseatable$ID = NULL
 gseaopcs = DEGs[['OPCs']]
 gseaplot2(gseaopcs, 1, color="royalblue1", title="", base_size=10, ES_geom="line")
 
-# FIG 3B: barplot for all cell types SenMayo enrichment score.
+# FIG 4B: barplot for all cell types SenMayo enrichment score.
 ggplot(data = SenMayo_GSEA_Pathway, aes(x = Pathway)) +
        geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
                 aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
