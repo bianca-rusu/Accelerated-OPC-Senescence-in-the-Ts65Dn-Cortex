@@ -1,0 +1,40 @@
+# Load the object and required packages.
+library(Seurat)
+library(GenomeInfoDb)
+library(EnsDb.Mmusculus.v79)
+library(patchwork)
+library(dplyr)
+RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
+DefaultAssay(RNA) <- 'RNA'
+RNA$celltype <- RNA@active.ident
+RNA$group_manual_labels <- paste(RNA$Condition, RNA$celltype, sep="_")
+Idents(RNA) <- RNA$group_manual_labels
+celltypes <- na.omit(unique(RNA$celltype))
+counts<-plyr::count(RNA@meta.data[, c("Condition", "group_manual_labels")])
+
+# Perform differential gene expression analysis (same analysis to be performed on Inhibitory and Excitatory neurons).
+DEGs <- list()
+for(celltype in celltypes){
+  des[[celltype]] <- list()
+  Control <- paste0("Control_", celltype)
+  DS <- paste0("DS_", celltype)
+  comparisons <- list(DS_Control=c(DS, Control))
+  for(comparison in comparisons){
+    if(isTRUE(counts$freq[counts$group_manual_labels==comparison[1]] > 50 
+              & counts$freq[counts$group_manual_labels==comparison[2]] > 50)){
+      name <- paste(comparison, collapse="_vs_")
+      diffs <- FindMarkers(RNA, ident.1 = comparison[1], ident.2 = comparison[2], min.pct = 0.05,
+                         latent.vars = 'nCount_RNA', test.use = "LR", logfc.threshold=0.1)
+      diffs$FDR <- p.adjust(diffs$p_val, method="BH")
+      diffs$sig <- diffs$FDR<0.05
+      diffs$location <- rownames(diffs)
+      DEGs[[celltype]][[name]] <- diffs
+    } else{
+      message("skipping comparison ", comparison, " for ", celltype, " because there were not enough cells")
+    }
+  }
+}
+for(celltype in names(DEGs)){
+  dat <- DEGs[[celltype]]
+  write_xlsx(dat, paste0(celltype, "_DGE.xlsx"))
+}
