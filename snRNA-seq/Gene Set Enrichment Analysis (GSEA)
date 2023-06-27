@@ -1,0 +1,113 @@
+# Load the object and required packages.
+library(ggplot2)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(GSEABase)
+library(enrichplot)
+library(readxl)
+library(forcats)
+library(ggstance)
+library(msigdbr)
+RNA <- readRDS("Ts65Dn_OPC_Senescence_RNA_Object.rds")
+
+# For the SenMayo gene set.
+geneset <- read.csv('SenMayo_Gene_List.csv')
+celltypes <- c([celltypes])
+DEGs <- list()
+gseatable <- vector()
+for (cell in celltypes){
+  print(cell)
+  filename <- paste0(cell,'_DGE.xlsx')
+  deg <- as.data.frame(read_xlsx(filename))
+  rownames(deg) <- deg$location
+  deg$X <- NULL
+  geneList <- deg$avg_log2FC
+  names(geneList) <- rownames(deg)
+  geneList <- sort(geneList, decreasing = TRUE)
+  DEGs[[cell]] <- GSEA(geneList, TERM2GENE = geneset, minGSSize = 5, pvalueCutoff = 0.99, verbose = FALSE, eps = 0)
+  gsea_results_df <- DEGs[[cell]]@result
+  gsea_results_df$FDR <- p.adjust(gsea_results_df$pvalue, method = "BH")
+  gsea_results_df$ID <- cell
+  gseatable <- rbind(gseatable,gsea_results_df)
+}
+
+# For Reactome gene sets.
+gene_sets = msigdbr(species = "Mus musculus", category = "C2", subcategory = "REACTOME")
+term <- gene_sets$gs_name
+gene <- gene_sets$gene_symbol
+geneset <- as.data.frame(cbind(term,gene)) 
+cellgroups <- c([celltypes])
+GSEA <- list()
+for (celltype in cellgroups){
+  message('Conducting GSEA Reactome for:',celltype)
+  filename <- paste0(celltype,'_DGE.xlsx')
+  deg <- as.data.frame(read_xlsx(filename))
+  geneList <- deg$avg_log2FC 
+  names(geneList) <- deg$location
+  geneList <- sort(geneList,decreasing = TRUE)
+  GSEA[[celltype]] <- GSEA(geneList, TERM2GENE=geneset, minGSSize = 5, pvalueCutoff = 0.10, verbose = FALSE, eps = 0)
+}
+for (celltype in cellgroups ){
+  gsea_results_df <- GSEA[[celltype]]@result
+  gsea_results_df$Description <- gsub('REACTOME_','',gsea_results_df$Description)
+  gsea_results_df$ID <- NULL 
+  outputname <- paste0('gsea_Reactome_RNA_msigdbr_DS_vs_Control_',celltype,'.xlsx')
+}
+
+# FIG 2D: barplot for all cell types GSEA pathways.
+ggplot(data = GSEA_Pathways, aes(x = Pathway)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
+  scale_color_manual(values = c("indianred2","#cdaf0a","springgreen3","lightseagreen",
+                                "lightskyblue","royalblue1","magenta3","orchid2")) +
+  scale_fill_manual(values = c("indianred2","#cdaf0a","springgreen3","lightseagreen",
+                               "lightskyblue","royalblue1","magenta3","orchid2")) +  
+  geom_point(data = GSEA_Pathways, shape = 16, cex = 2,
+             position = position_dodge(width = 0.8),
+             aes(x = Pathway, y = log2FDR/20, group = Celltype))+
+  scale_y_continuous(name = "NES", expand = c(0,0),limits = c(0,4.2),
+                     sec.axis = sec_axis(trans=~.*20, name="-log2(FDR)"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0.215), color="black", linetype="dotted", size=0.75)+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+# FIG 2E: barplot for glia cells GSEA pathways.
+ggplot(data = GSEA_Pathways_Glia, aes(x = Pathway)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
+  scale_color_manual(values = c("indianred2","lightseagreen","lightskyblue","royalblue1")) +
+  scale_fill_manual(values = c("indianred2","lightseagreen","lightskyblue","royalblue1")) +  
+  geom_point(data = GSEA_Pathways_Glia, shape = 16, cex = 2,
+             position = position_dodge(width = 0.8),
+             aes(x = Pathway, y = log2FDR/8, group = Celltype))+
+  scale_y_continuous(name = "NES", expand = c(0,0),limits = c(0,3),
+                     sec.axis = sec_axis(trans=~.*8, name="-log2(FDR)"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=0.53), color="black", linetype="dotted", size=0.75)+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+
+# FIG 3A: GSEA plot for OPCs SenMayo enrichment score.
+colnames(gseatable)[1] = cell
+gseatable$ID = NULL
+gseaopcs = DEGs[['OPCs']]
+gseaplot2(gseaopcs, 1, color="royalblue1", title="", base_size=10, ES_geom="line")
+
+# FIG 3B: barplot for all cell types SenMayo enrichment score.
+ggplot(data = SenMayo_GSEA_Pathway, aes(x = Pathway)) +
+  geom_col(position = position_dodge(0.8), alpha=0.1, size=0.6,width=0.6,
+           aes(x = Pathway, y = NES, color = Celltype, fill = Celltype)) +
+  scale_color_manual(values = c("indianred2","springgreen3","lightseagreen",
+                               "lightskyblue","royalblue1", "purple2", "magenta3","orchid2")) +
+  scale_fill_manual(values = c("indianred2","springgreen3","lightseagreen",
+                               "lightskyblue","royalblue1", "purple2", "magenta3","orchid2")) +  
+  geom_point(data = SenMayo_GSEA_Pathway, shape = 16, cex = 2,
+             position = position_dodge(width = 0.8),
+             aes(x = Pathway, y = log2FDR/3.75, group = Celltype))+
+  scale_y_continuous(name = "NES", expand = c(0,0),limits = c(0,2),
+                     sec.axis = sec_axis(trans=~.*3.75, name="-log2(FDR)"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  geom_hline(aes(yintercept=1.15), color="black", linetype="dotted", size=0.75)+
+  geom_hline(aes(yintercept=0), color="black", linetype="solid", size=0.5)
