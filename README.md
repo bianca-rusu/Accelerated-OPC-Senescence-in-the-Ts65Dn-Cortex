@@ -2,7 +2,7 @@
 This GitHub page includes all of the codes used for data analysis and figure making contained in the publication (Rusu et al., 2023).
 Codes have been separated into snATAC-seq, snRNA-seq, and immunostaining-associated plots.
 
-For more details see our paper in **eNeuro**:
+For more details see our paper on **bioRxiv**:
 *Single-Nucleus Profiling Identifies Accelerated Oligodendrocyte Precursor Cell Senescence in a Mouse Model of Down Syndrome*
 
 # Paper abstract:
