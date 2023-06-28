@@ -1,5 +1,5 @@
 # Accelerated OPC Senescence in the Ts65Dn Cortex
-This GitHub page includes all of the codes used for data analysis and figure making contained in the publication (Rusu et al., 2023).
+This GitHub page includes all of the codes used for data analysis and figure making contained in the associated publication (Rusu et al., 2023).
 Codes have been separated into snATAC-seq, snRNA-seq, and immunostaining-associated plots.
 
 For more details see our paper on **bioRxiv**:
